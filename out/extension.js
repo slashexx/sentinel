@@ -38,6 +38,91 @@ var vscode2 = __toESM(require("vscode"));
 
 // src/security.ts
 var vscode = __toESM(require("vscode"));
+var path = __toESM(require("path"));
+
+// src/parser/yaraParser.ts
+var fs = __toESM(require("fs"));
+function parseYaraFile(filePath) {
+  console.log(`Attempting to parse YARA file: ${filePath}`);
+  const content = fs.readFileSync(filePath, "utf8");
+  console.log("File content:", content);
+  const rules = [];
+  const ruleBlocks = content.split(/rule\s+/).filter((block) => block.trim());
+  console.log(`Found ${ruleBlocks.length} rule blocks`);
+  for (const block of ruleBlocks) {
+    console.log("Parsing rule block:", block);
+    const rule = parseRuleBlock(block);
+    if (rule) {
+      console.log("Successfully parsed rule:", rule);
+      rules.push(rule);
+    } else {
+      console.log("Failed to parse rule block");
+    }
+  }
+  return rules;
+}
+function parseRuleBlock(block) {
+  const nameMatch = block.match(/^(\w+)\s*{/);
+  if (!nameMatch) {
+    console.log("Failed to match rule name");
+    return null;
+  }
+  const name = nameMatch[1];
+  console.log("Parsing rule:", name);
+  const strings = [];
+  const metadataMatch = block.match(/meta:\s*([\s\S]*?)(?=strings:|condition:|$)/);
+  const stringsMatch = block.match(/strings:\s*([\s\S]*?)(?=condition:|$)/);
+  const conditionMatch = block.match(/condition:\s*([\s\S]*?)(?=}|$)/);
+  let metadata = {};
+  if (metadataMatch) {
+    console.log("Found metadata block:", metadataMatch[1]);
+    metadata = parseMetadata(metadataMatch[1]);
+  }
+  if (stringsMatch) {
+    console.log("Found strings block:", stringsMatch[1]);
+    strings.push(...parseStrings(stringsMatch[1]));
+  }
+  const result = {
+    name,
+    strings,
+    condition: conditionMatch ? conditionMatch[1].trim() : "true",
+    metadata
+  };
+  console.log("Parsed rule result:", JSON.stringify(result, null, 2));
+  return result;
+}
+function parseMetadata(metadataBlock) {
+  const metadata = {};
+  const lines = metadataBlock.trim().split("\n");
+  for (const line of lines) {
+    const match = line.match(/\s*(\w+)\s*=\s*["']([^"']+)["']/);
+    if (match) {
+      metadata[match[1]] = match[2];
+    }
+  }
+  return metadata;
+}
+function parseStrings(stringsBlock) {
+  const strings = [];
+  const lines = stringsBlock.trim().split("\n");
+  for (const line of lines) {
+    const match = line.match(/\s*\$(\w+)\s*=\s*(?:\/(.+)\/|"([^"]+)")/);
+    if (match) {
+      const identifier = match[1];
+      const value = match[2] || match[3];
+      console.log(`Parsed string: ${identifier} = ${value}`);
+      strings.push({
+        identifier,
+        value,
+        isRegex: !!match[2]
+        // true if the value was matched as a regex
+      });
+    }
+  }
+  return strings;
+}
+
+// src/security.ts
 
 // node_modules/@google/generative-ai/dist/index.mjs
 var SchemaType;
@@ -1011,6 +1096,18 @@ var GoogleGenerativeAI = class {
 var genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 var model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 function checkForSecurityIssues(document) {
+  const languageId = document.languageId;
+  const rulesPath = path.join(__dirname, "..", "rules", `${languageId}.yar`);
+  console.log(`Checking document with language: ${languageId}`);
+  console.log(`Looking for rules at: ${rulesPath}`);
+  let rules = [];
+  try {
+    rules = parseYaraFile(rulesPath);
+    console.log(`Loaded ${rules.length} rules for ${languageId}`);
+  } catch (error) {
+    console.error(`Error loading YARA rules:`, error);
+    return;
+  }
   const text = document.getText();
   const diagnostics = [];
   const patterns = [
