@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { checkForSecurityIssues, suggestSecurityFix, initializeGemini } from './security';
 
 export async function activate(context: vscode.ExtensionContext) {
-    console.log('Sentinel is now active!');
+    console.log('Sentinel extension is now active!');
 
     // Initialize API key
     try {
@@ -130,6 +130,12 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(disposable);
+
+    let analyzeDisposable = vscode.commands.registerCommand('sentinel.analyze', () => {
+        vscode.window.showInformationMessage('Running Sentinel security analysis...');
+    });
+
+    context.subscriptions.push(analyzeDisposable);
 }
 
 export function deactivate() {}

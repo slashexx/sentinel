@@ -17,11 +17,14 @@ export function initializeGemini(apiKey: string) {
 
 export function checkForSecurityIssues(document: vscode.TextDocument) {
     const languageId = document.languageId;
-    const rulesPath = path.join(__dirname, '..', 'rules', `${languageId}.yar`); // Note: changed extension to .yar
-    
+    const config = vscode.workspace.getConfiguration('sentinel');
+    const customRulesPath = config.get<string>('customRulesPath');
+    const defaultRulesPath = path.join(__dirname, '..', 'rules', `${languageId}.yar`);
+    const rulesPath = customRulesPath || defaultRulesPath;
+
     console.log(`Checking document with language: ${languageId}`);
     console.log(`Looking for rules at: ${rulesPath}`);
-    
+
     let rules: YaraRule[] = [];
     try {
         rules = parseYaraFile(rulesPath);
@@ -40,32 +43,32 @@ export function checkForSecurityIssues(document: vscode.TextDocument) {
             const regex = str.isRegex ? new RegExp(str.value, 'g') : new RegExp(escapeRegExp(str.value), 'g');
             console.log(`Checking pattern: ${regex}`);
             let match;
-            
+
             while ((match = regex.exec(text)) !== null) {
                 console.log(`Found match at index ${match.index}:`, match[0]);
                 const pos = document.positionAt(match.index);
                 const endPos = document.positionAt(match.index + match[0].length);
-                
+
                 const diagnostic = new vscode.Diagnostic(
                     new vscode.Range(pos, endPos),
                     `⚠️ ${rule.name}: ${rule.metadata?.description || 'Security issue detected'}`,
-                    rule.metadata?.severity === 'high' 
-                        ? vscode.DiagnosticSeverity.Error 
+                    rule.metadata?.severity === 'high'
+                        ? vscode.DiagnosticSeverity.Error
                         : vscode.DiagnosticSeverity.Warning
                 );
-            
-            // Add data for code fix
-            diagnostic.code = {
-                value: 'security-issue',
-                target: vscode.Uri.parse(`command:sentinel.suggestFix?${encodeURIComponent(JSON.stringify({
-                    issue: rule.metadata?.description || 'Security issue detected',
-                    code: match[0],
-                    lineNumber: pos.line + 1,
-                    documentUri: document.uri.toString()
-                }))}`)
-            };
-            
-            diagnostics.push(diagnostic);
+
+                // Add data for code fix
+                diagnostic.code = {
+                    value: 'security-issue',
+                    target: vscode.Uri.parse(`command:sentinel.suggestFix?${encodeURIComponent(JSON.stringify({
+                        issue: rule.metadata?.description || 'Security issue detected',
+                        code: match[0],
+                        lineNumber: pos.line + 1,
+                        documentUri: document.uri.toString()
+                    }))}`)
+                };
+
+                diagnostics.push(diagnostic);
             }
         });
     });
