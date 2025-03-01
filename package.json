@@ -10,7 +10,11 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:python"
+    "onLanguage:python",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescriptreact"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -35,6 +39,7 @@
     "lint": "eslint src",
     "test": "vscode-test"
   },
+  "dependencies": {},
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
