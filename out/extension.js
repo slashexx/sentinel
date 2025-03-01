@@ -122,8 +122,6 @@ function parseStrings(stringsBlock) {
   return strings;
 }
 
-// src/security.ts
-
 // node_modules/@google/generative-ai/dist/index.mjs
 var SchemaType;
 (function(SchemaType2) {
@@ -1093,8 +1091,15 @@ var GoogleGenerativeAI = class {
 };
 
 // src/security.ts
-var genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-var model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+var genAI = null;
+var model = null;
+function initializeGemini(apiKey) {
+  if (!apiKey) {
+    throw new Error("API key is required");
+  }
+  genAI = new GoogleGenerativeAI(apiKey);
+  model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+}
 function checkForSecurityIssues(document) {
   const languageId = document.languageId;
   const rulesPath = path.join(__dirname, "..", "rules", `${languageId}.yar`);
@@ -1110,39 +1115,46 @@ function checkForSecurityIssues(document) {
   }
   const text = document.getText();
   const diagnostics = [];
-  const patterns = [
-    { regex: /eval\(/g, message: "\u26A0\uFE0F Avoid using 'eval()', it's a security risk!" },
-    { regex: /exec\(/g, message: "\u26A0\uFE0F Using 'exec()' can lead to command injection!" },
-    { regex: /password\s*=\s*['"].+['"]/g, message: "\u26A0\uFE0F Hardcoded passwords detected!" }
-  ];
-  patterns.forEach((pattern) => {
-    let match;
-    while ((match = pattern.regex.exec(text)) !== null) {
-      const startPos = document.positionAt(match.index);
-      const endPos = document.positionAt(match.index + match[0].length);
-      const range = new vscode.Range(startPos, endPos);
-      const diagnostic = new vscode.Diagnostic(
-        range,
-        pattern.message,
-        vscode.DiagnosticSeverity.Warning
-      );
-      diagnostic.code = {
-        value: "security-issue",
-        target: vscode.Uri.parse(`command:sentinel.suggestFix?${encodeURIComponent(JSON.stringify({
-          issue: pattern.message,
-          code: match[0],
-          lineNumber: startPos.line + 1,
-          documentUri: document.uri.toString()
-        }))}`)
-      };
-      diagnostics.push(diagnostic);
-    }
+  rules.forEach((rule) => {
+    console.log(`Applying rule: ${rule.name}`);
+    rule.strings.forEach((str) => {
+      const regex = str.isRegex ? new RegExp(str.value, "g") : new RegExp(escapeRegExp(str.value), "g");
+      console.log(`Checking pattern: ${regex}`);
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        console.log(`Found match at index ${match.index}:`, match[0]);
+        const pos = document.positionAt(match.index);
+        const endPos = document.positionAt(match.index + match[0].length);
+        const diagnostic = new vscode.Diagnostic(
+          new vscode.Range(pos, endPos),
+          `\u26A0\uFE0F ${rule.name}: ${rule.metadata?.description || "Security issue detected"}`,
+          rule.metadata?.severity === "high" ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning
+        );
+        diagnostic.code = {
+          value: "security-issue",
+          target: vscode.Uri.parse(`command:sentinel.suggestFix?${encodeURIComponent(JSON.stringify({
+            issue: rule.metadata?.description || "Security issue detected",
+            code: match[0],
+            lineNumber: pos.line + 1,
+            documentUri: document.uri.toString()
+          }))}`)
+        };
+        diagnostics.push(diagnostic);
+      }
+    });
   });
+  console.log(`Found ${diagnostics.length} issues`);
   const diagnosticCollection = vscode.languages.createDiagnosticCollection("sentinel");
   diagnosticCollection.set(document.uri, diagnostics);
 }
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 async function suggestSecurityFix(issue, code, context = "") {
   try {
+    if (!model) {
+      throw new Error("Gemini API not initialized. Please check your API key.");
+    }
     const prompt = `
 I found a security issue in my code: "${issue}"
 The problematic code is: \`${code}\`
@@ -1152,9 +1164,16 @@ Please suggest a secure alternative that fixes this issue.
 Provide only the fixed code snippet without explanations.`;
     const result = await model.generateContent(prompt);
     const response = result.response;
-    return response.text() || "No suggestion available.";
+    const suggestion = response.text();
+    if (!suggestion) {
+      throw new Error("No suggestion received from Gemini");
+    }
+    return suggestion;
   } catch (error) {
     console.error("Error getting suggestion from Gemini:", error);
+    if (error instanceof Error) {
+      return `Failed to get suggestion: ${error.message}`;
+    }
     return "Failed to get suggestion. Please check your API key and network connection.";
   }
 }
@@ -1163,23 +1182,35 @@ Provide only the fixed code snippet without explanations.`;
 async function activate(context) {
   console.log("Sentinel is now active!");
   try {
-    const apiKey = await context.secrets.get("geminiApiKey");
+    let apiKey = await context.secrets.get("geminiApiKey");
+    console.log("Checking for existing API key:", apiKey ? "Found" : "Not found");
     if (!apiKey) {
+      console.log("Prompting user for API key...");
       const key = await vscode2.window.showInputBox({
-        prompt: "Enter your Google Gemini API key",
-        password: true
+        title: "Gemini API Key Required",
+        prompt: "Please enter your Google Gemini API key to enable security suggestions",
+        password: true,
+        ignoreFocusOut: true,
+        // Prevents the input box from closing when focus is lost
+        placeHolder: "Enter your Gemini API key here",
+        validateInput: (text) => {
+          return text && text.length > 10 ? null : "Please enter a valid API key (longer than 10 characters)";
+        }
       });
-      if (key) {
-        await context.secrets.store("geminiApiKey", key);
-        process.env.GEMINI_API_KEY = key;
-      } else {
-        throw new Error("API key is required for this extension to work");
+      if (!key) {
+        throw new Error("No API key provided");
       }
-    } else {
-      process.env.GEMINI_API_KEY = apiKey;
+      console.log("New API key received, storing...");
+      await context.secrets.store("geminiApiKey", key);
+      apiKey = key;
     }
+    console.log("Initializing Gemini...");
+    initializeGemini(apiKey);
+    vscode2.window.showInformationMessage("Sentinel initialized successfully with Gemini API");
   } catch (error) {
-    vscode2.window.showErrorMessage(`Failed to setup API key: ${error}`);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Failed to initialize Gemini:", errorMessage);
+    vscode2.window.showErrorMessage(`Failed to initialize Sentinel: ${errorMessage}`);
     return;
   }
   let disposable = vscode2.workspace.onDidChangeTextDocument((event) => {
@@ -1194,23 +1225,22 @@ async function activate(context) {
     vscode2.commands.registerCommand("sentinel.suggestFix", async (args) => {
       try {
         const { issue, code, lineNumber, documentUri } = args;
-        const fixingMsg = `Generating secure alternative for line ${lineNumber}...`;
+        const document = await vscode2.workspace.openTextDocument(vscode2.Uri.parse(documentUri));
+        const startLine = 0;
+        const endLine = document.lineCount - 1;
+        let context2 = "";
+        for (let i = startLine; i <= endLine; i++) {
+          if (i !== lineNumber - 1) {
+            context2 += document.lineAt(i).text + "\n";
+          }
+        }
         await vscode2.window.withProgress(
           {
             location: vscode2.ProgressLocation.Notification,
-            title: fixingMsg,
+            title: `Generating secure alternative for line ${lineNumber}...`,
             cancellable: false
           },
           async () => {
-            const document = await vscode2.workspace.openTextDocument(vscode2.Uri.parse(documentUri));
-            const startLine = Math.max(0, lineNumber - 3);
-            const endLine = Math.min(document.lineCount - 1, lineNumber + 2);
-            let context2 = "";
-            for (let i = startLine; i <= endLine; i++) {
-              if (i !== lineNumber - 1) {
-                context2 += document.lineAt(i).text + "\n";
-              }
-            }
             const suggestion = await suggestSecurityFix(issue, code, context2);
             const selection = await vscode2.window.showInformationMessage(
               `Suggestion for line ${lineNumber}:`,
@@ -1221,18 +1251,25 @@ async function activate(context) {
             );
             if (selection === "Apply Fix") {
               const edit = new vscode2.WorkspaceEdit();
-              const line = document.lineAt(lineNumber - 1);
-              const startChar = line.text.indexOf(code);
-              if (startChar !== -1) {
-                const range = new vscode2.Range(
-                  lineNumber - 1,
-                  startChar,
-                  lineNumber - 1,
-                  startChar + code.length
-                );
-                edit.replace(document.uri, range, suggestion);
-                await vscode2.workspace.applyEdit(edit);
+              let cleanedSuggestion = suggestion;
+              if (suggestion.startsWith("```")) {
+                const codeBlockRegex = /```(?:[\w]*\n)?([\s\S]*?)```/;
+                const match = suggestion.match(codeBlockRegex);
+                if (match && match[1]) {
+                  cleanedSuggestion = match[1].trim();
+                }
               }
+              edit.replace(
+                document.uri,
+                new vscode2.Range(
+                  0,
+                  0,
+                  document.lineCount - 1,
+                  document.lineAt(document.lineCount - 1).text.length
+                ),
+                cleanedSuggestion
+              );
+              await vscode2.workspace.applyEdit(edit);
             } else if (selection === "Copy to Clipboard") {
               await vscode2.env.clipboard.writeText(suggestion);
               vscode2.window.showInformationMessage("Fix copied to clipboard!");
@@ -1240,8 +1277,7 @@ async function activate(context) {
           }
         );
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        vscode2.window.showErrorMessage(`Error generating fix: ${errorMessage}`);
+        vscode2.window.showErrorMessage(`Error generating fix: ${error instanceof Error ? error.message : "Unknown error"}`);
       }
     })
   );

@@ -1,28 +1,45 @@
 import * as vscode from 'vscode';
-import { checkForSecurityIssues, suggestSecurityFix } from './security';
+import { checkForSecurityIssues, suggestSecurityFix, initializeGemini } from './security';
 
 export async function activate(context: vscode.ExtensionContext) {
     console.log('Sentinel is now active!');
 
-    // This securely stores the API key
+    // Initialize API key
     try {
-        const apiKey = await context.secrets.get('geminiApiKey');
+        let apiKey = await context.secrets.get('geminiApiKey');
+        console.log('Checking for existing API key:', apiKey ? 'Found' : 'Not found');
+
         if (!apiKey) {
+            console.log('Prompting user for API key...');
             const key = await vscode.window.showInputBox({
-                prompt: 'Enter your Google Gemini API key',
-                password: true
+                title: 'Gemini API Key Required',
+                prompt: 'Please enter your Google Gemini API key to enable security suggestions',
+                password: true,
+                ignoreFocusOut: true, // Prevents the input box from closing when focus is lost
+                placeHolder: 'Enter your Gemini API key here',
+                validateInput: text => {
+                    return text && text.length > 10 ? null : 'Please enter a valid API key (longer than 10 characters)';
+                }
             });
-            if (key) {
-                await context.secrets.store('geminiApiKey', key);
-                process.env.GEMINI_API_KEY = key;
-            } else {
-                throw new Error('API key is required for this extension to work');
+
+            if (!key) {
+                throw new Error('No API key provided');
             }
-        } else {
-            process.env.GEMINI_API_KEY = apiKey;
+
+            console.log('New API key received, storing...');
+            await context.secrets.store('geminiApiKey', key);
+            apiKey = key;
         }
+
+        // Initialize Gemini with the API key
+        console.log('Initializing Gemini...');
+        initializeGemini(apiKey);
+        vscode.window.showInformationMessage('Sentinel initialized successfully with Gemini API');
+
     } catch (error) {
-        vscode.window.showErrorMessage(`Failed to setup API key: ${error}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Failed to initialize Gemini:', errorMessage);
+        vscode.window.showErrorMessage(`Failed to initialize Sentinel: ${errorMessage}`);
         return;
     }
 
@@ -49,32 +66,28 @@ export async function activate(context: vscode.ExtensionContext) {
             try {
                 const { issue, code, lineNumber, documentUri } = args;
                 
+                const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(documentUri));
+                
+                // Get context from surrounding lines
+                const startLine = 0;
+                const endLine = document.lineCount - 1;
+                let context = '';
+                for (let i = startLine; i <= endLine; i++) {
+                    if (i !== lineNumber - 1) {
+                        context += document.lineAt(i).text + '\n';
+                    }
+                }
+                
                 // Show progress indicator
-                const fixingMsg = `Generating secure alternative for line ${lineNumber}...`;
                 await vscode.window.withProgress(
                     {
                         location: vscode.ProgressLocation.Notification,
-                        title: fixingMsg,
+                        title: `Generating secure alternative for line ${lineNumber}...`,
                         cancellable: false
                     },
                     async () => {
-                        // Get the document to extract some context
-                        const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(documentUri));
-                        
-                        // Get a few lines before and after for context
-                        const startLine = Math.max(0, lineNumber - 3);
-                        const endLine = Math.min(document.lineCount - 1, lineNumber + 2);
-                        let context = '';
-                        for (let i = startLine; i <= endLine; i++) {
-                            if (i !== lineNumber - 1) { // Skip the problematic line itself
-                                context += document.lineAt(i).text + '\n';
-                            }
-                        }
-                        
-                        // Get suggestion from Gemini
                         const suggestion = await suggestSecurityFix(issue, code, context);
                         
-                        // Show the suggestion to the user
                         const selection = await vscode.window.showInformationMessage(
                             `Suggestion for line ${lineNumber}:`, 
                             { modal: true, detail: suggestion },
@@ -83,17 +96,27 @@ export async function activate(context: vscode.ExtensionContext) {
                         
                         if (selection === 'Apply Fix') {
                             const edit = new vscode.WorkspaceEdit();
-                            // Find the exact position of the code in the line
-                            const line = document.lineAt(lineNumber - 1);
-                            const startChar = line.text.indexOf(code);
-                            if (startChar !== -1) {
-                                const range = new vscode.Range(
-                                    lineNumber - 1, startChar,
-                                    lineNumber - 1, startChar + code.length
-                                );
-                                edit.replace(document.uri, range, suggestion);
-                                await vscode.workspace.applyEdit(edit);
+                            // Remove any code block markers and language identifiers if present
+                            let cleanedSuggestion = suggestion;
+                            if (suggestion.startsWith('```')) {
+                                // Extract content between code blocks
+                                const codeBlockRegex = /```(?:[\w]*\n)?([\s\S]*?)```/;
+                                const match = suggestion.match(codeBlockRegex);
+                                if (match && match[1]) {
+                                    cleanedSuggestion = match[1].trim();
+                                }
                             }
+                            
+                            edit.replace(
+                                document.uri, 
+                                new vscode.Range(
+                                    0, 0, 
+                                    document.lineCount - 1, 
+                                    document.lineAt(document.lineCount - 1).text.length
+                                ),
+                                cleanedSuggestion
+                            );
+                            await vscode.workspace.applyEdit(edit);
                         } else if (selection === 'Copy to Clipboard') {
                             await vscode.env.clipboard.writeText(suggestion);
                             vscode.window.showInformationMessage('Fix copied to clipboard!');
@@ -101,8 +124,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     }
                 );
             } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                vscode.window.showErrorMessage(`Error generating fix: ${errorMessage}`);
+                vscode.window.showErrorMessage(`Error generating fix: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
         })
     );

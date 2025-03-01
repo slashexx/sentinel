@@ -4,9 +4,16 @@ import { parseYaraFile } from './parser/yaraParser';
 import { YaraRule } from './types/yara';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize Gemini client - you'll need an API key
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || ''); // Store API key securely
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+let genAI: GoogleGenerativeAI | null = null;
+let model: any = null;
+
+export function initializeGemini(apiKey: string) {
+    if (!apiKey) {
+        throw new Error('API key is required');
+    }
+    genAI = new GoogleGenerativeAI(apiKey);
+    model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+}
 
 export function checkForSecurityIssues(document: vscode.TextDocument) {
     const languageId = document.languageId;
@@ -51,9 +58,9 @@ export function checkForSecurityIssues(document: vscode.TextDocument) {
             diagnostic.code = {
                 value: 'security-issue',
                 target: vscode.Uri.parse(`command:sentinel.suggestFix?${encodeURIComponent(JSON.stringify({
-                    issue: pattern.message,
+                    issue: rule.metadata?.description || 'Security issue detected',
                     code: match[0],
-                    lineNumber: startPos.line + 1,
+                    lineNumber: pos.line + 1,
                     documentUri: document.uri.toString()
                 }))}`)
             };
@@ -75,6 +82,10 @@ function escapeRegExp(string: string): string {
 // Function to suggest a fix using Gemini
 export async function suggestSecurityFix(issue: string, code: string, context: string = ''): Promise<string> {
     try {
+        if (!model) {
+            throw new Error('Gemini API not initialized. Please check your API key.');
+        }
+
         const prompt = `
 I found a security issue in my code: "${issue}"
 The problematic code is: \`${code}\`
@@ -85,9 +96,18 @@ Provide only the fixed code snippet without explanations.`;
 
         const result = await model.generateContent(prompt);
         const response = result.response;
-        return response.text() || 'No suggestion available.';
+        const suggestion = response.text();
+        
+        if (!suggestion) {
+            throw new Error('No suggestion received from Gemini');
+        }
+        
+        return suggestion;
     } catch (error) {
         console.error('Error getting suggestion from Gemini:', error);
+        if (error instanceof Error) {
+            return `Failed to get suggestion: ${error.message}`;
+        }
         return 'Failed to get suggestion. Please check your API key and network connection.';
     }
 }
