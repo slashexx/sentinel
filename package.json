@@ -1,6 +1,6 @@
 {
   "name": "sentinel",
-  "displayName": "sentinel",
+  "displayName": "Sentinel Security Checker",
   "description": "A dynamic code security analysis tool",
   "version": "0.0.1",
   "engines": {
@@ -9,13 +9,15 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
-  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:python"
+  ],
+  "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "sentinel.helloWorld",
-        "title": "Hello World"
+        "command": "sentinel.scan",
+        "title": "Scan for Security Issues"
       }
     ]
   },
