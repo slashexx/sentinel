@@ -99,10 +99,20 @@ export async function suggestSecurityFix(issue: string, code: string, context: s
         throw new Error('Gemini API not initialized');
     }
 
+    // Get the matching YARA rule based on the issue
+    const languageId = vscode.window.activeTextEditor?.document.languageId || '';
+    const rulesPath = path.join(__dirname, '..', 'rules', `${languageId}.yar`);
+    const rules = parseYaraFile(rulesPath);
+    const matchingRule = rules.find(r => r.metadata?.description === issue);
+
     const prompt = `
-Analyze this security issue and provide a fix in the following JSON format (without any markdown or code blocks).
-For Python code, preserve logical indentation in suggestedCode. The indentation in the response should be relative 
-(use spaces at the start of each line to show nesting, but don't include the full file's indentation):
+As a security expert, analyze this code issue and provide a secure fix. 
+Consider this security context:
+Rule: ${matchingRule?.name || 'Unknown'}
+Severity: ${matchingRule?.metadata?.severity || 'Unknown'}
+Description: ${issue}
+
+Provide a fix in the following JSON format (without any markdown or code blocks):
 
 {
     "fixes": [
@@ -116,7 +126,6 @@ For Python code, preserve logical indentation in suggestedCode. The indentation 
     "overallExplanation": "<general explanation of the fix>"
 }
 
-Security Issue: "${issue}"
 Problematic Code: \`${code}\`
 ${context ? `Context: ${context}` : ''}`;
 

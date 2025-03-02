@@ -1,49 +1,207 @@
-"use strict";var ft=Object.create;var N=Object.defineProperty;var gt=Object.getOwnPropertyDescriptor;var ht=Object.getOwnPropertyNames;var Et=Object.getPrototypeOf,pt=Object.prototype.hasOwnProperty;var Ct=(t,e)=>{for(var n in e)N(t,n,{get:e[n],enumerable:!0})},P=(t,e,n,o)=>{if(e&&typeof e=="object"||typeof e=="function")for(let s of ht(e))!pt.call(t,s)&&s!==n&&N(t,s,{get:()=>e[s],enumerable:!(o=gt(e,s))||o.enumerable});return t};var T=(t,e,n)=>(n=t!=null?ft(Et(t)):{},P(e||!t||!t.__esModule?N(n,"default",{value:t,enumerable:!0}):n,t)),mt=t=>P(N({},"__esModule",{value:!0}),t);var Qt={};Ct(Qt,{activate:()=>zt,deactivate:()=>Xt});module.exports=mt(Qt);var u=T(require("vscode"));var m=T(require("vscode")),lt=T(require("path"));var H=T(require("fs"));function Y(t){console.log(`Attempting to parse YARA file: ${t}`);let e=H.readFileSync(t,"utf8");console.log("File content:",e);let n=[],o=e.split(/rule\s+/).filter(s=>s.trim());console.log(`Found ${o.length} rule blocks`);for(let s of o){console.log("Parsing rule block:",s);let i=vt(s);i?(console.log("Successfully parsed rule:",i),n.push(i)):console.log("Failed to parse rule block")}return n}function vt(t){let e=t.match(/^(\w+)\s*{/);if(!e)return console.log("Failed to match rule name"),null;let n=e[1];console.log("Parsing rule:",n);let o=[],s=t.match(/meta:\s*([\s\S]*?)(?=strings:|condition:|$)/),i=t.match(/strings:\s*([\s\S]*?)(?=condition:|$)/),r=t.match(/condition:\s*([\s\S]*?)(?=}|$)/),a={};s&&(console.log("Found metadata block:",s[1]),a=_t(s[1])),i&&(console.log("Found strings block:",i[1]),o.push(...yt(i[1])));let c={name:n,strings:o,condition:r?r[1].trim():"true",metadata:a};return console.log("Parsed rule result:",JSON.stringify(c,null,2)),c}function _t(t){let e={},n=t.trim().split(`
-`);for(let o of n){let s=o.match(/\s*(\w+)\s*=\s*["']([^"']+)["']/);s&&(e[s[1]]=s[2])}return e}function yt(t){let e=[],n=t.trim().split(`
-`);for(let o of n){let s=o.match(/\s*\$(\w+)\s*=\s*(?:\/(.+)\/|"([^"]+)")/);if(s){let i=s[1],r=s[2]||s[3];console.log(`Parsed string: ${i} = ${r}`),e.push({identifier:i,value:r,isRegex:!!s[2]})}}return e}var j;(function(t){t.STRING="string",t.NUMBER="number",t.INTEGER="integer",t.BOOLEAN="boolean",t.ARRAY="array",t.OBJECT="object"})(j||(j={}));var K;(function(t){t.LANGUAGE_UNSPECIFIED="language_unspecified",t.PYTHON="python"})(K||(K={}));var B;(function(t){t.OUTCOME_UNSPECIFIED="outcome_unspecified",t.OUTCOME_OK="outcome_ok",t.OUTCOME_FAILED="outcome_failed",t.OUTCOME_DEADLINE_EXCEEDED="outcome_deadline_exceeded"})(B||(B={}));var q=["user","model","function","system"],V;(function(t){t.HARM_CATEGORY_UNSPECIFIED="HARM_CATEGORY_UNSPECIFIED",t.HARM_CATEGORY_HATE_SPEECH="HARM_CATEGORY_HATE_SPEECH",t.HARM_CATEGORY_SEXUALLY_EXPLICIT="HARM_CATEGORY_SEXUALLY_EXPLICIT",t.HARM_CATEGORY_HARASSMENT="HARM_CATEGORY_HARASSMENT",t.HARM_CATEGORY_DANGEROUS_CONTENT="HARM_CATEGORY_DANGEROUS_CONTENT"})(V||(V={}));var J;(function(t){t.HARM_BLOCK_THRESHOLD_UNSPECIFIED="HARM_BLOCK_THRESHOLD_UNSPECIFIED",t.BLOCK_LOW_AND_ABOVE="BLOCK_LOW_AND_ABOVE",t.BLOCK_MEDIUM_AND_ABOVE="BLOCK_MEDIUM_AND_ABOVE",t.BLOCK_ONLY_HIGH="BLOCK_ONLY_HIGH",t.BLOCK_NONE="BLOCK_NONE"})(J||(J={}));var W;(function(t){t.HARM_PROBABILITY_UNSPECIFIED="HARM_PROBABILITY_UNSPECIFIED",t.NEGLIGIBLE="NEGLIGIBLE",t.LOW="LOW",t.MEDIUM="MEDIUM",t.HIGH="HIGH"})(W||(W={}));var z;(function(t){t.BLOCKED_REASON_UNSPECIFIED="BLOCKED_REASON_UNSPECIFIED",t.SAFETY="SAFETY",t.OTHER="OTHER"})(z||(z={}));var I;(function(t){t.FINISH_REASON_UNSPECIFIED="FINISH_REASON_UNSPECIFIED",t.STOP="STOP",t.MAX_TOKENS="MAX_TOKENS",t.SAFETY="SAFETY",t.RECITATION="RECITATION",t.LANGUAGE="LANGUAGE",t.BLOCKLIST="BLOCKLIST",t.PROHIBITED_CONTENT="PROHIBITED_CONTENT",t.SPII="SPII",t.MALFORMED_FUNCTION_CALL="MALFORMED_FUNCTION_CALL",t.OTHER="OTHER"})(I||(I={}));var X;(function(t){t.TASK_TYPE_UNSPECIFIED="TASK_TYPE_UNSPECIFIED",t.RETRIEVAL_QUERY="RETRIEVAL_QUERY",t.RETRIEVAL_DOCUMENT="RETRIEVAL_DOCUMENT",t.SEMANTIC_SIMILARITY="SEMANTIC_SIMILARITY",t.CLASSIFICATION="CLASSIFICATION",t.CLUSTERING="CLUSTERING"})(X||(X={}));var Q;(function(t){t.MODE_UNSPECIFIED="MODE_UNSPECIFIED",t.AUTO="AUTO",t.ANY="ANY",t.NONE="NONE"})(Q||(Q={}));var Z;(function(t){t.MODE_UNSPECIFIED="MODE_UNSPECIFIED",t.MODE_DYNAMIC="MODE_DYNAMIC"})(Z||(Z={}));var E=class extends Error{constructor(e){super(`[GoogleGenerativeAI Error]: ${e}`)}},y=class extends E{constructor(e,n){super(e),this.response=n}},x=class extends E{constructor(e,n,o,s){super(e),this.status=n,this.statusText=o,this.errorDetails=s}},v=class extends E{};var wt="https://generativelanguage.googleapis.com",Rt="v1beta",It="0.22.0",Ot="genai-js",R;(function(t){t.GENERATE_CONTENT="generateContent",t.STREAM_GENERATE_CONTENT="streamGenerateContent",t.COUNT_TOKENS="countTokens",t.EMBED_CONTENT="embedContent",t.BATCH_EMBED_CONTENTS="batchEmbedContents"})(R||(R={}));var $=class{constructor(e,n,o,s,i){this.model=e,this.task=n,this.apiKey=o,this.stream=s,this.requestOptions=i}toString(){var e,n;let o=((e=this.requestOptions)===null||e===void 0?void 0:e.apiVersion)||Rt,i=`${((n=this.requestOptions)===null||n===void 0?void 0:n.baseUrl)||wt}/${o}/${this.model}:${this.task}`;return this.stream&&(i+="?alt=sse"),i}};function St(t){let e=[];return t?.apiClient&&e.push(t.apiClient),e.push(`${Ot}/${It}`),e.join(" ")}async function At(t){var e;let n=new Headers;n.append("Content-Type","application/json"),n.append("x-goog-api-client",St(t.requestOptions)),n.append("x-goog-api-key",t.apiKey);let o=(e=t.requestOptions)===null||e===void 0?void 0:e.customHeaders;if(o){if(!(o instanceof Headers))try{o=new Headers(o)}catch(s){throw new v(`unable to convert customHeaders value ${JSON.stringify(o)} to Headers: ${s.message}`)}for(let[s,i]of o.entries()){if(s==="x-goog-api-key")throw new v(`Cannot set reserved header name ${s}`);if(s==="x-goog-api-client")throw new v(`Header name ${s} can only be set using the apiClient field`);n.append(s,i)}}return n}async function Nt(t,e,n,o,s,i){let r=new $(t,e,n,o,i);return{url:r.toString(),fetchOptions:Object.assign(Object.assign({},Mt(i)),{method:"POST",headers:await At(r),body:s})}}async function A(t,e,n,o,s,i={},r=fetch){let{url:a,fetchOptions:c}=await Nt(t,e,n,o,s,i);return Tt(a,c,r)}async function Tt(t,e,n=fetch){let o;try{o=await n(t,e)}catch(s){bt(s,t)}return o.ok||await xt(o,t),o}function bt(t,e){let n=t;throw t instanceof x||t instanceof v||(n=new E(`Error fetching from ${e.toString()}: ${t.message}`),n.stack=t.stack),n}async function xt(t,e){let n="",o;try{let s=await t.json();n=s.error.message,s.error.details&&(n+=` ${JSON.stringify(s.error.details)}`,o=s.error.details)}catch{}throw new x(`Error fetching from ${e.toString()}: [${t.status} ${t.statusText}] ${n}`,t.status,t.statusText,o)}function Mt(t){let e={};if(t?.signal!==void 0||t?.timeout>=0){let n=new AbortController;t?.timeout>=0&&setTimeout(()=>n.abort(),t.timeout),t?.signal&&t.signal.addEventListener("abort",()=>{n.abort()}),e.signal=n.signal}return e}function k(t){return t.text=()=>{if(t.candidates&&t.candidates.length>0){if(t.candidates.length>1&&console.warn(`This response had ${t.candidates.length} candidates. Returning text from the first candidate only. Access response.candidates directly to use the other candidates.`),b(t.candidates[0]))throw new y(`${w(t)}`,t);return Dt(t)}else if(t.promptFeedback)throw new y(`Text not available. ${w(t)}`,t);return""},t.functionCall=()=>{if(t.candidates&&t.candidates.length>0){if(t.candidates.length>1&&console.warn(`This response had ${t.candidates.length} candidates. Returning function calls from the first candidate only. Access response.candidates directly to use the other candidates.`),b(t.candidates[0]))throw new y(`${w(t)}`,t);return console.warn("response.functionCall() is deprecated. Use response.functionCalls() instead."),tt(t)[0]}else if(t.promptFeedback)throw new y(`Function call not available. ${w(t)}`,t)},t.functionCalls=()=>{if(t.candidates&&t.candidates.length>0){if(t.candidates.length>1&&console.warn(`This response had ${t.candidates.length} candidates. Returning function calls from the first candidate only. Access response.candidates directly to use the other candidates.`),b(t.candidates[0]))throw new y(`${w(t)}`,t);return tt(t)}else if(t.promptFeedback)throw new y(`Function call not available. ${w(t)}`,t)},t}function Dt(t){var e,n,o,s;let i=[];if(!((n=(e=t.candidates)===null||e===void 0?void 0:e[0].content)===null||n===void 0)&&n.parts)for(let r of(s=(o=t.candidates)===null||o===void 0?void 0:o[0].content)===null||s===void 0?void 0:s.parts)r.text&&i.push(r.text),r.executableCode&&i.push("\n```"+r.executableCode.language+`
-`+r.executableCode.code+"\n```\n"),r.codeExecutionResult&&i.push("\n```\n"+r.codeExecutionResult.output+"\n```\n");return i.length>0?i.join(""):""}function tt(t){var e,n,o,s;let i=[];if(!((n=(e=t.candidates)===null||e===void 0?void 0:e[0].content)===null||n===void 0)&&n.parts)for(let r of(s=(o=t.candidates)===null||o===void 0?void 0:o[0].content)===null||s===void 0?void 0:s.parts)r.functionCall&&i.push(r.functionCall);if(i.length>0)return i}var Lt=[I.RECITATION,I.SAFETY,I.LANGUAGE];function b(t){return!!t.finishReason&&Lt.includes(t.finishReason)}function w(t){var e,n,o;let s="";if((!t.candidates||t.candidates.length===0)&&t.promptFeedback)s+="Response was blocked",!((e=t.promptFeedback)===null||e===void 0)&&e.blockReason&&(s+=` due to ${t.promptFeedback.blockReason}`),!((n=t.promptFeedback)===null||n===void 0)&&n.blockReasonMessage&&(s+=`: ${t.promptFeedback.blockReasonMessage}`);else if(!((o=t.candidates)===null||o===void 0)&&o[0]){let i=t.candidates[0];b(i)&&(s+=`Candidate was blocked due to ${i.finishReason}`,i.finishMessage&&(s+=`: ${i.finishMessage}`))}return s}function O(t){return this instanceof O?(this.v=t,this):new O(t)}function $t(t,e,n){if(!Symbol.asyncIterator)throw new TypeError("Symbol.asyncIterator is not defined.");var o=n.apply(t,e||[]),s,i=[];return s={},r("next"),r("throw"),r("return"),s[Symbol.asyncIterator]=function(){return this},s;function r(l){o[l]&&(s[l]=function(d){return new Promise(function(g,h){i.push([l,d,g,h])>1||a(l,d)})})}function a(l,d){try{c(o[l](d))}catch(g){C(i[0][3],g)}}function c(l){l.value instanceof O?Promise.resolve(l.value.v).then(p,f):C(i[0][2],l)}function p(l){a("next",l)}function f(l){a("throw",l)}function C(l,d){l(d),i.shift(),i.length&&a(i[0][0],i[0][1])}}var et=/^data\: (.*)(?:\n\n|\r\r|\r\n\r\n)/;function Ft(t){let e=t.body.pipeThrough(new TextDecoderStream("utf8",{fatal:!0})),n=Gt(e),[o,s]=n.tee();return{stream:Ut(o),response:kt(s)}}async function kt(t){let e=[],n=t.getReader();for(;;){let{done:o,value:s}=await n.read();if(o)return k(Pt(e));e.push(s)}}function Ut(t){return $t(this,arguments,function*(){let n=t.getReader();for(;;){let{value:o,done:s}=yield O(n.read());if(s)break;yield yield O(k(o))}})}function Gt(t){let e=t.getReader();return new ReadableStream({start(o){let s="";return i();function i(){return e.read().then(({value:r,done:a})=>{if(a){if(s.trim()){o.error(new E("Failed to parse stream"));return}o.close();return}s+=r;let c=s.match(et),p;for(;c;){try{p=JSON.parse(c[1])}catch{o.error(new E(`Error parsing JSON response: "${c[1]}"`));return}o.enqueue(p),s=s.substring(c[0].length),c=s.match(et)}return i()})}}})}function Pt(t){let e=t[t.length-1],n={promptFeedback:e?.promptFeedback};for(let o of t){if(o.candidates){let s=0;for(let i of o.candidates)if(n.candidates||(n.candidates=[]),n.candidates[s]||(n.candidates[s]={index:s}),n.candidates[s].citationMetadata=i.citationMetadata,n.candidates[s].groundingMetadata=i.groundingMetadata,n.candidates[s].finishReason=i.finishReason,n.candidates[s].finishMessage=i.finishMessage,n.candidates[s].safetyRatings=i.safetyRatings,i.content&&i.content.parts){n.candidates[s].content||(n.candidates[s].content={role:i.content.role||"user",parts:[]});let r={};for(let a of i.content.parts)a.text&&(r.text=a.text),a.functionCall&&(r.functionCall=a.functionCall),a.executableCode&&(r.executableCode=a.executableCode),a.codeExecutionResult&&(r.codeExecutionResult=a.codeExecutionResult),Object.keys(r).length===0&&(r.text=""),n.candidates[s].content.parts.push(r)}s++}o.usageMetadata&&(n.usageMetadata=o.usageMetadata)}return n}async function it(t,e,n,o){let s=await A(e,R.STREAM_GENERATE_CONTENT,t,!0,JSON.stringify(n),o);return Ft(s)}async function rt(t,e,n,o){let i=await(await A(e,R.GENERATE_CONTENT,t,!1,JSON.stringify(n),o)).json();return{response:k(i)}}function at(t){if(t!=null){if(typeof t=="string")return{role:"system",parts:[{text:t}]};if(t.text)return{role:"system",parts:[t]};if(t.parts)return t.role?t:{role:"system",parts:t.parts}}}function S(t){let e=[];if(typeof t=="string")e=[{text:t}];else for(let n of t)typeof n=="string"?e.push({text:n}):e.push(n);return Ht(e)}function Ht(t){let e={role:"user",parts:[]},n={role:"function",parts:[]},o=!1,s=!1;for(let i of t)"functionResponse"in i?(n.parts.push(i),s=!0):(e.parts.push(i),o=!0);if(o&&s)throw new E("Within a single message, FunctionResponse cannot be mixed with other type of part in the request for sending chat message.");if(!o&&!s)throw new E("No content is provided for sending chat message.");return o?e:n}function Yt(t,e){var n;let o={model:e?.model,generationConfig:e?.generationConfig,safetySettings:e?.safetySettings,tools:e?.tools,toolConfig:e?.toolConfig,systemInstruction:e?.systemInstruction,cachedContent:(n=e?.cachedContent)===null||n===void 0?void 0:n.name,contents:[]},s=t.generateContentRequest!=null;if(t.contents){if(s)throw new v("CountTokensRequest must have one of contents or generateContentRequest, not both.");o.contents=t.contents}else if(s)o=Object.assign(Object.assign({},o),t.generateContentRequest);else{let i=S(t);o.contents=[i]}return{generateContentRequest:o}}function nt(t){let e;return t.contents?e=t:e={contents:[S(t)]},t.systemInstruction&&(e.systemInstruction=at(t.systemInstruction)),e}function jt(t){return typeof t=="string"||Array.isArray(t)?{content:S(t)}:t}var ot=["text","inlineData","functionCall","functionResponse","executableCode","codeExecutionResult"],Kt={user:["text","inlineData"],function:["functionResponse"],model:["text","functionCall","executableCode","codeExecutionResult"],system:["text"]};function Bt(t){let e=!1;for(let n of t){let{role:o,parts:s}=n;if(!e&&o!=="user")throw new E(`First content should be with role 'user', got ${o}`);if(!q.includes(o))throw new E(`Each item should include role field. Got ${o} but valid roles are: ${JSON.stringify(q)}`);if(!Array.isArray(s))throw new E("Content should have 'parts' property with an array of Parts");if(s.length===0)throw new E("Each Content should have at least one part");let i={text:0,inlineData:0,functionCall:0,functionResponse:0,fileData:0,executableCode:0,codeExecutionResult:0};for(let a of s)for(let c of ot)c in a&&(i[c]+=1);let r=Kt[o];for(let a of ot)if(!r.includes(a)&&i[a]>0)throw new E(`Content with role '${o}' can't contain '${a}' part`);e=!0}}var st="SILENT_ERROR",F=class{constructor(e,n,o,s={}){this.model=n,this.params=o,this._requestOptions=s,this._history=[],this._sendPromise=Promise.resolve(),this._apiKey=e,o?.history&&(Bt(o.history),this._history=o.history)}async getHistory(){return await this._sendPromise,this._history}async sendMessage(e,n={}){var o,s,i,r,a,c;await this._sendPromise;let p=S(e),f={safetySettings:(o=this.params)===null||o===void 0?void 0:o.safetySettings,generationConfig:(s=this.params)===null||s===void 0?void 0:s.generationConfig,tools:(i=this.params)===null||i===void 0?void 0:i.tools,toolConfig:(r=this.params)===null||r===void 0?void 0:r.toolConfig,systemInstruction:(a=this.params)===null||a===void 0?void 0:a.systemInstruction,cachedContent:(c=this.params)===null||c===void 0?void 0:c.cachedContent,contents:[...this._history,p]},C=Object.assign(Object.assign({},this._requestOptions),n),l;return this._sendPromise=this._sendPromise.then(()=>rt(this._apiKey,this.model,f,C)).then(d=>{var g,h;if(d.response.candidates&&d.response.candidates.length>0&&((g=d.response.candidates[0])===null||g===void 0?void 0:g.content)!==void 0){this._history.push(p);let _=Object.assign({parts:[],role:"model"},(h=d.response.candidates)===null||h===void 0?void 0:h[0].content);this._history.push(_)}else{let _=w(d.response);_&&console.warn(`sendMessage() was unsuccessful. ${_}. Inspect response object for details.`)}l=d}),await this._sendPromise,l}async sendMessageStream(e,n={}){var o,s,i,r,a,c;await this._sendPromise;let p=S(e),f={safetySettings:(o=this.params)===null||o===void 0?void 0:o.safetySettings,generationConfig:(s=this.params)===null||s===void 0?void 0:s.generationConfig,tools:(i=this.params)===null||i===void 0?void 0:i.tools,toolConfig:(r=this.params)===null||r===void 0?void 0:r.toolConfig,systemInstruction:(a=this.params)===null||a===void 0?void 0:a.systemInstruction,cachedContent:(c=this.params)===null||c===void 0?void 0:c.cachedContent,contents:[...this._history,p]},C=Object.assign(Object.assign({},this._requestOptions),n),l=it(this._apiKey,this.model,f,C);return this._sendPromise=this._sendPromise.then(()=>l).catch(d=>{throw new Error(st)}).then(d=>d.response).then(d=>{var g;if(d.candidates&&d.candidates.length>0&&((g=d.candidates[0])===null||g===void 0?void 0:g.content)!==void 0){this._history.push(p);let h=Object.assign({},d.candidates[0].content);h.role||(h.role="model"),this._history.push(h)}else{let h=w(d);h&&console.warn(`sendMessageStream() was unsuccessful. ${h}. Inspect response object for details.`)}}).catch(d=>{d.message!==st&&console.error(d)}),l}};async function qt(t,e,n,o){return(await A(e,R.COUNT_TOKENS,t,!1,JSON.stringify(n),o)).json()}async function Vt(t,e,n,o){return(await A(e,R.EMBED_CONTENT,t,!1,JSON.stringify(n),o)).json()}async function Jt(t,e,n,o){let s=n.requests.map(r=>Object.assign(Object.assign({},r),{model:e}));return(await A(e,R.BATCH_EMBED_CONTENTS,t,!1,JSON.stringify({requests:s}),o)).json()}var M=class{constructor(e,n,o={}){this.apiKey=e,this._requestOptions=o,n.model.includes("/")?this.model=n.model:this.model=`models/${n.model}`,this.generationConfig=n.generationConfig||{},this.safetySettings=n.safetySettings||[],this.tools=n.tools,this.toolConfig=n.toolConfig,this.systemInstruction=at(n.systemInstruction),this.cachedContent=n.cachedContent}async generateContent(e,n={}){var o;let s=nt(e),i=Object.assign(Object.assign({},this._requestOptions),n);return rt(this.apiKey,this.model,Object.assign({generationConfig:this.generationConfig,safetySettings:this.safetySettings,tools:this.tools,toolConfig:this.toolConfig,systemInstruction:this.systemInstruction,cachedContent:(o=this.cachedContent)===null||o===void 0?void 0:o.name},s),i)}async generateContentStream(e,n={}){var o;let s=nt(e),i=Object.assign(Object.assign({},this._requestOptions),n);return it(this.apiKey,this.model,Object.assign({generationConfig:this.generationConfig,safetySettings:this.safetySettings,tools:this.tools,toolConfig:this.toolConfig,systemInstruction:this.systemInstruction,cachedContent:(o=this.cachedContent)===null||o===void 0?void 0:o.name},s),i)}startChat(e){var n;return new F(this.apiKey,this.model,Object.assign({generationConfig:this.generationConfig,safetySettings:this.safetySettings,tools:this.tools,toolConfig:this.toolConfig,systemInstruction:this.systemInstruction,cachedContent:(n=this.cachedContent)===null||n===void 0?void 0:n.name},e),this._requestOptions)}async countTokens(e,n={}){let o=Yt(e,{model:this.model,generationConfig:this.generationConfig,safetySettings:this.safetySettings,tools:this.tools,toolConfig:this.toolConfig,systemInstruction:this.systemInstruction,cachedContent:this.cachedContent}),s=Object.assign(Object.assign({},this._requestOptions),n);return qt(this.apiKey,this.model,o,s)}async embedContent(e,n={}){let o=jt(e),s=Object.assign(Object.assign({},this._requestOptions),n);return Vt(this.apiKey,this.model,o,s)}async batchEmbedContents(e,n={}){let o=Object.assign(Object.assign({},this._requestOptions),n);return Jt(this.apiKey,this.model,e,o)}};var D=class{constructor(e){this.apiKey=e}getGenerativeModel(e,n){if(!e.model)throw new E("Must provide a model name. Example: genai.getGenerativeModel({ model: 'my-model-name' })");return new M(this.apiKey,e,n)}getGenerativeModelFromCachedContent(e,n,o){if(!e.name)throw new v("Cached content must contain a `name` field.");if(!e.model)throw new v("Cached content must contain a `model` field.");let s=["model","systemInstruction"];for(let r of s)if(n?.[r]&&e[r]&&n?.[r]!==e[r]){if(r==="model"){let a=n.model.startsWith("models/")?n.model.replace("models/",""):n.model,c=e.model.startsWith("models/")?e.model.replace("models/",""):e.model;if(a===c)continue}throw new v(`Different value for "${r}" specified in modelParams (${n[r]}) and cachedContent (${e[r]})`)}let i=Object.assign(Object.assign({},n),{model:e.model,tools:e.tools,toolConfig:e.toolConfig,systemInstruction:e.systemInstruction,cachedContent:e});return new M(this.apiKey,i,o)}};var ct=null,U=null;function dt(t){if(!t)throw new Error("API key is required");ct=new D(t),U=ct.getGenerativeModel({model:"gemini-1.5-pro"})}function G(t){let e=t.languageId,o=m.workspace.getConfiguration("sentinel").get("customRulesPath"),s=lt.join(__dirname,"..","rules",`${e}.yar`),i=o||s;console.log(`Checking document with language: ${e}`),console.log(`Looking for rules at: ${i}`);let r=[];try{r=Y(i),console.log(`Loaded ${r.length} rules for ${e}`)}catch(f){console.error("Error loading YARA rules:",f);return}let a=t.getText(),c=[];r.forEach(f=>{console.log(`Applying rule: ${f.name}`),f.strings.forEach(C=>{let l=C.isRegex?new RegExp(C.value,"g"):new RegExp(Wt(C.value),"g");console.log(`Checking pattern: ${l}`);let d;for(;(d=l.exec(a))!==null;){console.log(`Found match at index ${d.index}:`,d[0]);let g=t.positionAt(d.index),h=t.positionAt(d.index+d[0].length),_=new m.Diagnostic(new m.Range(g,h),`\u26A0\uFE0F ${f.name}: ${f.metadata?.description||"Security issue detected"}`,f.metadata?.severity==="high"?m.DiagnosticSeverity.Error:m.DiagnosticSeverity.Warning);_.code={value:"security-issue",target:m.Uri.parse(`command:sentinel.suggestFix?${encodeURIComponent(JSON.stringify({issue:f.metadata?.description||"Security issue detected",code:d[0],lineNumber:g.line+1,documentUri:t.uri.toString()}))}`)},c.push(_)}})}),console.log(`Found ${c.length} issues`),m.languages.createDiagnosticCollection("sentinel").set(t.uri,c)}function Wt(t){return t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}async function ut(t,e,n=""){try{if(!U)throw new Error("Gemini API not initialized. Please check your API key.");let o=`
-I found a security issue in my code: "${t}"
-The problematic code is: \`${e}\`
-${n?`Context: ${n}`:""}
-
-Please suggest a secure alternative that fixes this issue. 
-Provide only the fixed code snippet without explanations.`,r=(await U.generateContent(o)).response.text();if(!r)throw new Error("No suggestion received from Gemini");return r}catch(o){return console.error("Error getting suggestion from Gemini:",o),o instanceof Error?`Failed to get suggestion: ${o.message}`:"Failed to get suggestion. Please check your API key and network connection."}}async function zt(t){console.log("Sentinel is now active!");try{let o=await t.secrets.get("geminiApiKey");if(console.log("Checking for existing API key:",o?"Found":"Not found"),!o){console.log("Prompting user for API key...");let s=await u.window.showInputBox({title:"Gemini API Key Required",prompt:"Please enter your Google Gemini API key to enable security suggestions",password:!0,ignoreFocusOut:!0,placeHolder:"Enter your Gemini API key here",validateInput:i=>i&&i.length>10?null:"Please enter a valid API key (longer than 10 characters)"});if(!s)throw new Error("No API key provided");console.log("New API key received, storing..."),await t.secrets.store("geminiApiKey",s),o=s}console.log("Initializing Gemini..."),dt(o),u.window.showInformationMessage("Sentinel initialized successfully with Gemini API")}catch(o){let s=o instanceof Error?o.message:"Unknown error";console.error("Failed to initialize Gemini:",s),u.window.showErrorMessage(`Failed to initialize Sentinel: ${s}`);return}let e=u.workspace.onDidChangeTextDocument(o=>{G(o.document)});u.workspace.onDidOpenTextDocument(o=>{G(o)});let n=u.languages.createDiagnosticCollection("sentinel");t.subscriptions.push(n),t.subscriptions.push(u.commands.registerCommand("sentinel.suggestFix",async o=>{try{let{issue:s,code:i,lineNumber:r,documentUri:a}=o,c=await u.workspace.openTextDocument(u.Uri.parse(a)),p=0,f=c.lineCount-1,C="";for(let l=p;l<=f;l++)l!==r-1&&(C+=c.lineAt(l).text+`
-`);await u.window.withProgress({location:u.ProgressLocation.Notification,title:`Generating secure alternative for line ${r}...`,cancellable:!1},async()=>{let l=await ut(s,i,C),d=await u.window.showInformationMessage(`Suggestion for line ${r}:`,{modal:!0,detail:l},"Apply Fix","Copy to Clipboard","Cancel");if(d==="Apply Fix"){let g=new u.WorkspaceEdit,h=l;if(l.startsWith("```")){let _=/```(?:[\w]*\n)?([\s\S]*?)```/,L=l.match(_);L&&L[1]&&(h=L[1].trim())}g.replace(c.uri,new u.Range(0,0,c.lineCount-1,c.lineAt(c.lineCount-1).text.length),h),await u.workspace.applyEdit(g)}else d==="Copy to Clipboard"&&(await u.env.clipboard.writeText(l),u.window.showInformationMessage("Fix copied to clipboard!"))})}catch(s){u.window.showErrorMessage(`Error generating fix: ${s instanceof Error?s.message:"Unknown error"}`)}})),t.subscriptions.push(e)}function Xt(){}0&&(module.exports={activate,deactivate});
-/*! Bundled license information:
-
-@google/generative-ai/dist/index.mjs:
-  (**
-   * @license
-   * Copyright 2024 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-
-@google/generative-ai/dist/index.mjs:
-  (**
-   * @license
-   * Copyright 2024 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-*/
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.activate = activate;
+exports.deactivate = deactivate;
+const vscode = __importStar(require("vscode"));
+const security_1 = require("./security");
+function getIndentation(line) {
+    const match = line.match(/^(\s+)/);
+    const indent = match ? match[1] : '';
+    // Calculate indentation level (assuming 4 spaces or 1 tab per level)
+    const level = indent.replace(/\t/g, '    ').length / 4;
+    return { indent, level };
+}
+function preserveIndentation(originalLine, newCode) {
+    const { indent } = getIndentation(originalLine);
+    // Split multiline code and preserve indentation for each line
+    return newCode.split('\n').map((line, i) => {
+        // First line uses original indentation
+        if (i === 0) {
+            return indent + line.trimStart();
+        }
+        // Subsequent lines adjust indentation relative to the first line
+        const additionalIndent = getIndentation(line).level;
+        return indent + '    '.repeat(additionalIndent) + line.trimStart();
+    }).join('\n');
+}
+async function showDiffPreview(document, fixes) {
+    // Get the active text editor
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        throw new Error('No active editor found');
+    }
+    // Create decorations for the changes
+    const deleteDecoration = vscode.window.createTextEditorDecorationType({
+        backgroundColor: new vscode.ThemeColor('diffEditor.removedTextBackground'),
+        isWholeLine: true,
+    });
+    const addDecoration = vscode.window.createTextEditorDecorationType({
+        backgroundColor: new vscode.ThemeColor('diffEditor.insertedTextBackground'),
+        isWholeLine: true,
+    });
+    try {
+        // Apply decorations to show the diff
+        const deletedRanges = [];
+        const addedRanges = [];
+        fixes.forEach(fix => {
+            const line = fix.lineNumber - 1;
+            const originalLine = document.lineAt(line).text;
+            const suggestedCode = preserveIndentation(originalLine, fix.suggestedCode);
+            fix.suggestedCode = suggestedCode; // Update the fix with proper indentation
+            const range = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, originalLine.length));
+            deletedRanges.push(range);
+            addedRanges.push(range);
+        });
+        editor.setDecorations(deleteDecoration, deletedRanges);
+        editor.setDecorations(addDecoration, addedRanges);
+        // Show the changes in a preview panel
+        const changesDetail = fixes.map(fix => `Line ${fix.lineNumber}:\n` +
+            `Current:  ${fix.originalCode}\n` +
+            `Proposed: ${fix.suggestedCode}\n` +
+            `Reason: ${fix.explanation}`).join('\n\n');
+        const choice = await vscode.window.showInformationMessage('Review the highlighted changes. Would you like to apply these security fixes?', { modal: true, detail: changesDetail }, 'Apply Fixes', 'Cancel');
+        return choice === 'Apply Fixes';
+    }
+    finally {
+        // Clean up decorations
+        deleteDecoration.dispose();
+        addDecoration.dispose();
+    }
+}
+async function activate(context) {
+    console.log('Sentinel extension is now active!');
+    // Initialize API key
+    try {
+        let apiKey = await context.secrets.get('geminiApiKey');
+        console.log('Checking for existing API key:', apiKey ? 'Found' : 'Not found');
+        if (!apiKey) {
+            console.log('Prompting user for API key...');
+            const key = await vscode.window.showInputBox({
+                title: 'Gemini API Key Required',
+                prompt: 'Please enter your Google Gemini API key to enable security suggestions',
+                password: true,
+                ignoreFocusOut: true, // Prevents the input box from closing when focus is lost
+                placeHolder: 'Enter your Gemini API key here',
+                validateInput: text => {
+                    return text && text.length > 10 ? null : 'Please enter a valid API key (longer than 10 characters)';
+                }
+            });
+            if (!key) {
+                throw new Error('No API key provided');
+            }
+            console.log('New API key received, storing...');
+            await context.secrets.store('geminiApiKey', key);
+            apiKey = key;
+        }
+        // Initialize Gemini with the API key
+        console.log('Initializing Gemini...');
+        (0, security_1.initializeGemini)(apiKey);
+        vscode.window.showInformationMessage('Sentinel initialized successfully.');
+    }
+    catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Failed to initialize Gemini:', errorMessage);
+        vscode.window.showErrorMessage(`Failed to initialize Sentinel: ${errorMessage}`);
+        return;
+    }
+    let disposable = vscode.workspace.onDidChangeTextDocument(event => {
+        (0, security_1.checkForSecurityIssues)(event.document);
+    });
+    // Also check when a document is opened
+    vscode.workspace.onDidOpenTextDocument(document => {
+        (0, security_1.checkForSecurityIssues)(document);
+    });
+    const diagnosticCollection = vscode.languages.createDiagnosticCollection("sentinel");
+    context.subscriptions.push(diagnosticCollection);
+    // Register command to suggest fixes
+    context.subscriptions.push(vscode.commands.registerCommand('sentinel.suggestFix', async (args) => {
+        try {
+            const { issue, code, lineNumber, documentUri } = args;
+            const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(documentUri));
+            // Get context from surrounding lines
+            const startLine = Math.max(0, lineNumber - 3);
+            const endLine = Math.min(document.lineCount - 1, lineNumber + 3);
+            const context = Array.from({ length: endLine - startLine + 1 }, (_, i) => document.lineAt(startLine + i).text).join('\n');
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: "Analyzing security issue...",
+                cancellable: false
+            }, async () => {
+                const suggestion = await (0, security_1.suggestSecurityFix)(issue, code, context);
+                // Update the fixes with the correct line number
+                suggestion.fixes = suggestion.fixes.map(fix => ({
+                    ...fix,
+                    lineNumber: lineNumber,
+                    originalCode: code
+                }));
+                // Show preview and get approval
+                const approved = await showDiffPreview(document, suggestion.fixes);
+                if (approved) {
+                    const edit = new vscode.WorkspaceEdit();
+                    for (const fix of suggestion.fixes) {
+                        const line = fix.lineNumber - 1;
+                        const originalLine = document.lineAt(line).text;
+                        const lineText = document.lineAt(line).text;
+                        const range = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, lineText.length));
+                        // Preserve indentation when applying the fix
+                        const suggestedCode = preserveIndentation(originalLine, fix.suggestedCode);
+                        edit.replace(document.uri, range, suggestedCode);
+                    }
+                    await vscode.workspace.applyEdit(edit);
+                    vscode.window.showInformationMessage('Security fixes applied successfully!');
+                }
+            });
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`Error generating fix: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }));
+    context.subscriptions.push(disposable);
+    let analyzeDisposable = vscode.commands.registerCommand('sentinel.analyze', () => {
+        vscode.window.showInformationMessage('Running Sentinel security analysis...');
+    });
+    context.subscriptions.push(analyzeDisposable);
+}
+function createDiffView(fixes) {
+    return fixes.map(fix => `Line ${fix.lineNumber}:
+\`\`\`diff
+- ${fix.originalCode}
++ ${fix.suggestedCode}
+\`\`\`
+Explanation: ${fix.explanation || ''}`).join('\n\n');
+}
+function deactivate() { }
+//# sourceMappingURL=extension.js.map
